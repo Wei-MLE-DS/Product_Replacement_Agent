@@ -36,19 +36,3 @@ Review scores
 Return frequency
 
 
-smart-agent/
-│
-├── data/                     # Raw and processed image & metadata
-├── notebooks/                # EDA, experiments, and training logs
-├── models/                   # Saved trained models
-├── src/
-│   ├── fraud_detection/
-│   │   ├── image_model.py    # CNN model for image classification
-│   │   ├── metadata_model.py # Metadata-based classifier
-│   │   └── fusion_model.py   # Ensemble or hybrid model logic
-│   └── product_replacement/
-│       └── recommender.py    # Product replacement logic
-├── utils/                    # Feature extraction, image processing, helpers
-├── config/                   # Config files, model parameters
-├── requirements.txt
-└── README.md
