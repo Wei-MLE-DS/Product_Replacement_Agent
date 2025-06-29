@@ -38,29 +38,28 @@ product_return_agent/
 
 ```
 product_return_agent/
-├── src/
-│   ├── main.py                       # Main application logic (LangGraph workflow, agent, etc.)
-│   ├── extract_pet_review_sample.py   # Script to extract samples from JSONL to CSV
-│   ├── product_return_agent_ui.app.py # Streamlit UI
-│   └── __init__.py                   # (optional, marks src as a package)
+├── src/                       # Main application source code
+│   ├── main.py                # Core agent logic, workflow, and orchestration
+│   ├── extract_pet_review_sample.py  # Script to extract samples from JSONL to CSV
+│   ├── product_return_agent_ui.app.py # Streamlit UI for the agent
+│   └── __init__.py            # (optional) Marks src as a Python package
 │
-├── data/
+├── data/                      # All data files (not committed to GitHub if large/sensitive)
 │   ├── amazon_review_pets.csv
 │   ├── meta_amazon_review_pets.csv
-│   ├── meta_Pet_Supplies.jsonl
-│   └── ...                           # Any other data files
+│   └── ...                    # Any other data files
 │
-├── test/
-│   ├── test_web_search.py            # Test script for web search fallback
-│   └── ...                           # Other test scripts
+├── test/                      # Test scripts and test data
+│   ├── test_agent.py          # Script to test the agent logic directly
+│   ├── test_web_search.py     # Script to test the web search fallback
+│   └── ...                    # Other test scripts
 │
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── workflow.mmd                      # Mermaid diagram source
-├── workflow.png                      # Workflow diagram image
-├── .env                              # (not committed) API keys and secrets
-├── venv/                             # Virtual environment (not committed)
+├── requirements.txt           # Python dependencies
+├── README.md                  # Project documentation
+├── .gitignore                 # Git ignore rules
+├── workflow.mmd               # Mermaid diagram source for workflow
+├── workflow.png               # Workflow diagram image
+├── venv/                      # Python virtual environment (not committed)
 │   └── ... (virtual environment files)
 └── ...
 ```
@@ -90,17 +89,25 @@ product_return_agent/
 
 ## Usage
 
-### **Run the Streamlit UI**
+> **Note:** The Streamlit UI is currently has a bug. To test the agent, please use the test script below.
+
+### **Run the Streamlit UI (currently not working)**
 ```bash
-streamlit run product_return_agent_ui.app.py
+streamlit run src/product_return_agent_ui.app.py
 ```
 - Upload a product image or use test mode.
 - Enter product title and reason for return.
 - View recommendations in a chat-like interface.
 
+### **Test the Agent (Recommended)**
+```bash
+python test/test_agent.py
+```
+- Runs a test of the agent logic directly with sample input.
+
 ### **Test Web Search Fallback**
 ```bash
-python test_web_search.py
+python test/test_web_search.py
 ```
 - Runs a test of the web search fallback logic with a sample product title and reason.
 
