@@ -23,7 +23,7 @@ venv0627/
 # Local data files
 
 *.jsonl
-*.png
+#*.png
 *.jpg
 *.jpeg
 

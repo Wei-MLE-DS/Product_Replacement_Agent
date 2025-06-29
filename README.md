@@ -18,8 +18,8 @@ A conversational agent for product returns and recommendations, built with Pytho
 1. **Clone the repository**
 2. **Create and activate a Python 3.9+ virtual environment**
    ```bash
-   python3.9 -m venv venv0627
-   source venv0627/bin/activate
+   python3.9 -m venv venv
+   source venv/bin/activate
    ```
 3. **Install dependencies**
    ```bash
