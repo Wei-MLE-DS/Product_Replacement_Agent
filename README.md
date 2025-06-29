@@ -13,6 +13,60 @@ A conversational agent for product returns and recommendations, built with Pytho
 
 ---
 
+## Project Structure (Current)
+
+```
+product_return_agent/
+├── amazon_review_pets.csv
+├── extract_pet_review_sample.py
+├── main.py
+├── meta_amazon_review_pets.csv
+├── meta_Pet_Supplies.jsonl
+├── product_return_agent_ui.app.py
+├── requirements.txt
+├── test_web_search.py
+├── workflow.mmd
+├── workflow.png
+├── venv/
+│   └── ... (virtual environment files)
+└── ...
+```
+
+---
+
+## Project Structure (Recommended)
+
+```
+product_return_agent/
+├── src/
+│   ├── main.py                       # Main application logic (LangGraph workflow, agent, etc.)
+│   ├── extract_pet_review_sample.py   # Script to extract samples from JSONL to CSV
+│   ├── product_return_agent_ui.app.py # Streamlit UI
+│   └── __init__.py                   # (optional, marks src as a package)
+│
+├── data/
+│   ├── amazon_review_pets.csv
+│   ├── meta_amazon_review_pets.csv
+│   ├── meta_Pet_Supplies.jsonl
+│   └── ...                           # Any other data files
+│
+├── test/
+│   ├── test_web_search.py            # Test script for web search fallback
+│   └── ...                           # Other test scripts
+│
+├── requirements.txt
+├── README.md
+├── .gitignore
+├── workflow.mmd                      # Mermaid diagram source
+├── workflow.png                      # Workflow diagram image
+├── .env                              # (not committed) API keys and secrets
+├── venv/                             # Virtual environment (not committed)
+│   └── ... (virtual environment files)
+└── ...
+```
+
+---
+
 ## Setup
 
 1. **Clone the repository**
