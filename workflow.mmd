@@ -1,0 +1,18 @@
+flowchart TD
+    A["User uploads image or skips to test"] --> B{"Image validation"}
+    B -- "valid" --> C["User enters product title and return reason"]
+    B -- "ai-generated/photoshopped/invalid" --> D["Show error, ask for new image"]
+    C --> E["Find best-matched product titles (fuzzy match)"]
+    E --> F["Filter products by rating >= 4.0"]
+    F --> G["Compute metadata similarity"]
+    G -- "Similarity >= threshold" --> H["Recommend products (show formatted blocks)"]
+    G -- "No match" --> W["Web search for better product"]
+    W --> I["Show web search recommendation or 'No suitable recommendation' message"]
+    H --> J["Show recommendations in UI"]
+    I --> J
+    D --> A
+    style J fill:#e0ffe0,stroke:#333,stroke-width:2px
+    style D fill:#ffe0e0,stroke:#333,stroke-width:2px
+    style H fill:#e0f7ff,stroke:#333,stroke-width:2px
+    style I fill:#fffbe0,stroke:#333,stroke-width:2px
+    style W fill:#e0eaff,stroke:#333,stroke-width:2px 
