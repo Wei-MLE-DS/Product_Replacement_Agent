@@ -8,8 +8,9 @@ A conversational agent for product returns and recommendations, built with Pytho
 - **Image Upload & Validation**: Detects valid, AI-generated, or photoshopped images.
 - **Conversational UI**: Collects product title and return reason from the user.
 - **Metadata-Based Recommendation**: Finds similar or better products using fuzzy matching and metadata similarity.
-- **Web Search Fallback**: Uses Tavily to find alternatives if no suitable product is found locally.
+- **Web Search Fallback**: If no suitable product is found locally, the agent will automatically perform a web search and return a clearly formatted web result as a fallback.
 - **Streamlit UI**: User-friendly chatbot interface with test mode for easy testing.
+- **Automated and Interactive CLI Testing**: Use test scripts for both automated and manual testing.
 
 ---
 
@@ -17,49 +18,26 @@ A conversational agent for product returns and recommendations, built with Pytho
 
 ```
 product_return_agent/
-├── amazon_review_pets.csv
-├── extract_pet_review_sample.py
-├── main.py
-├── meta_amazon_review_pets.csv
-├── meta_Pet_Supplies.jsonl
-├── product_return_agent_ui.app.py
+├── data/
+│   ├── amazon_review_pets.csv
+│   ├── meta_amazon_review_pets.csv
+│   └── ...
+├── src/
+│   ├── main.py
+│   ├── extract_pet_review_sample.py
+│   ├── product_return_agent_ui.app.py
+│   └── ...
+├── test/
+│   ├── test_agent.py
+│   ├── cli_agent_test.py
+│   ├── test_web_search.py
+│   └── ...
 ├── requirements.txt
-├── test_web_search.py
+├── README.md
+├── .gitignore
 ├── workflow.mmd
 ├── workflow.png
 ├── venv/
-│   └── ... (virtual environment files)
-└── ...
-```
-
----
-
-## Project Structure (Recommended)
-
-```
-product_return_agent/
-├── src/                       # Main application source code
-│   ├── main.py                # Core agent logic, workflow, and orchestration
-│   ├── extract_pet_review_sample.py  # Script to extract samples from JSONL to CSV
-│   ├── product_return_agent_ui.app.py # Streamlit UI for the agent
-│   └── __init__.py            # (optional) Marks src as a Python package
-│
-├── data/                      # All data files (not committed to GitHub if large/sensitive)
-│   ├── amazon_review_pets.csv
-│   ├── meta_amazon_review_pets.csv
-│   └── ...                    # Any other data files
-│
-├── test/                      # Test scripts and test data
-│   ├── test_agent.py          # Script to test the agent logic directly
-│   ├── test_web_search.py     # Script to test the web search fallback
-│   └── ...                    # Other test scripts
-│
-├── requirements.txt           # Python dependencies
-├── README.md                  # Project documentation
-├── .gitignore                 # Git ignore rules
-├── workflow.mmd               # Mermaid diagram source for workflow
-├── workflow.png               # Workflow diagram image
-├── venv/                      # Python virtual environment (not committed)
 │   └── ... (virtual environment files)
 └── ...
 ```
@@ -84,32 +62,44 @@ product_return_agent/
      OPENAI_API_KEY=your_openai_key
      TAVILY_API_KEY=your_tavily_key
      ```
+5. **Place all data files in the `data/` directory**
+   - Example: `data/meta_amazon_review_pets.csv`, `data/amazon_review_pets.csv`, etc.
 
 ---
 
 ## Usage
 
-> **Note:** The Streamlit UI is currently has a bug. To test the agent, please use the test script below.
-
-### **Run the Streamlit UI (currently not working)**
+### **Run the Streamlit UI**
 ```bash
-streamlit run src/product_return_agent_ui.app.py
+streamlit run src/product_return_agent_ui.py
 ```
 - Upload a product image or use test mode.
 - Enter product title and reason for return.
 - View recommendations in a chat-like interface.
+- If no similar product is found locally, the agent will automatically perform a web search and return a clearly formatted web result as a fallback.
+- **Note:** All data files must be in the `data/` directory.
 
-### **Test the Agent (Recommended)**
+### **Automated Test of the Agent**
 ```bash
 python test/test_agent.py
 ```
-- Runs a test of the agent logic directly with sample input.
+- Runs a set of automated test cases for the agent logic with sample input and prints the results for each scenario.
+- **Note:** All data files must be in the `data/` directory.
+
+### **Interactive CLI Test of the Agent**
+```bash
+python test/cli_agent_test.py
+```
+- Prompts you for image path, product title, and reason for return, then runs the agent and prints the recommendation.
+- Useful for manual, human-in-the-loop testing.
+- **Note:** All data files must be in the `data/` directory.
 
 ### **Test Web Search Fallback**
 ```bash
 python test/test_web_search.py
 ```
-- Runs a test of the web search fallback logic with a sample product title and reason.
+- Runs a test of the web search fallback logic with a sample product title and reason that does not exist in the local data, ensuring the web search fallback is triggered and the result is clearly formatted.
+- **Note:** All data files must be in the `data/` directory.
 
 ---
 
@@ -141,6 +131,9 @@ The workflow is visualized in `workflow.png`:
 - The agent uses fuzzy string matching for robust product title clustering.
 - Test mode allows you to skip image upload and simulate different validation results.
 - For best results, ensure your virtual environment is activated before running scripts.
+- Both automated and interactive CLI testing are supported via `test_agent.py` and `cli_agent_test.py`.
+- **All scripts and the UI expect data files to be in the `data/` directory.**
+- **If no suitable product is found locally, the agent will automatically perform a web search and return a clearly formatted web result as a fallback.**
 
 ---
 

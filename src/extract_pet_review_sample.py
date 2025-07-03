@@ -22,4 +22,4 @@ def extract_sample_from_jsonl(jsonl_path, csv_path, n=100):
 if __name__ == "__main__":
     # Change 'your_pet_review.jsonl' to your actual JSONL file name
     extract_sample_from_jsonl('Pet_Supplies.jsonl', 'amazon_review_pets.csv', n=100) 
-    extract_sample_from_jsonl('meta_Pet_Supplies.jsonl', 'meta_amazon_review_pets.csv', n=100) 
+    extract_sample_from_jsonl('meta_Pet_Supplies.jsonl', os.path.join("data", "meta_amazon_review_pets.csv"), n=100) 

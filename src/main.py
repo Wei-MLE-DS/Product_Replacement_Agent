@@ -70,7 +70,11 @@ RETURN_REASON_CATEGORIES = [
 
 # --- Node 1: Ask for Image Upload ---
 def image_upload_node(state: ReturnAgentState):
-    image_path = input("Please upload a picture of the product (enter file path): ")
+    # Use image_path from state if provided (e.g., from Streamlit UI)
+    image_path = state.get("image_path", "")
+    interactive = state.get("interactive", False)
+    if not image_path and interactive:
+        image_path = input("Please upload a picture of the product (enter file path): ")
     state["image_path"] = image_path
     state["messages"] = []
     return state
@@ -93,8 +97,14 @@ def image_validation_node(state: ReturnAgentState):
 
 # --- Node 3: Ask for Product Info ---
 def product_info_node(state: ReturnAgentState):
-    title = input("Enter the product title: ")
-    reason = input("Enter the reason for returning the product: ")
+    # Use values from state if provided (e.g., from Streamlit UI)
+    title = state.get("product_title", "")
+    reason = state.get("return_reason", "")
+    interactive = state.get("interactive", False)
+    if not title and interactive:
+        title = input("Enter the product title: ")
+    if not reason and interactive:
+        reason = input("Enter the reason for returning the product: ")
     # LLM intent extraction
     intent = llm_extract_intent(reason)
     state["product_title"] = title
@@ -107,7 +117,7 @@ def csv_search_node(state: ReturnAgentState):
     title = state.get("product_title", "")
     reason = state.get("return_reason", "")
     intent = state.get("intent", "")
-    csv_path = "meta_amazon_review_pets.csv"
+    csv_path = os.path.join("data", "meta_amazon_review_pets.csv")
     if not os.path.exists(csv_path):
         state["recommendation"] = f"Data file {csv_path} not found."
         return state
@@ -121,13 +131,13 @@ def csv_search_node(state: ReturnAgentState):
     df["title_fuzz"] = df["title"].apply(lambda t: fuzz.token_set_ratio(title, str(t)))
     best_title_fuzz = df["title_fuzz"].max()
     if best_title_fuzz < 50 or pd.isna(best_title_fuzz):
-        state["recommendation"] = "No similar product title found."
+        state["recommendation"] = ""
         return state
     # Step 2: Cluster products with similar titles (threshold, e.g., 80)
     title_threshold = 80
     matched_title_df = df[df["title_fuzz"] >= title_threshold]
     if matched_title_df.empty:
-        state["recommendation"] = "No products found for the best-matched title."
+        state["recommendation"] = ""
         return state
     # Step 3: Compute similarity between user_text and metadata fields
     user_text = f"{title} {reason}"
@@ -168,8 +178,8 @@ def csv_search_node(state: ReturnAgentState):
             f"Title: {row.get('title', '')}\n"
             f"Average Rating: {row.get('average_rating', '')}\n"
             f"Features:\n{features_str}\n"
-            f"Price: ${row.get('price', '')}\n"
-            f"ASIN: {row.get('parent_asin', '')}"
+            f"- Price: ${row.get('price', '')}\n"
+            f"- ASIN: {row.get('parent_asin', '')}"
         )
         formatted_blocks.append(block)
     state["recommendation"] = '\n\n'.join(formatted_blocks)
@@ -183,11 +193,18 @@ def web_search_node(state: ReturnAgentState):
     try:
         results = client.search(query, max_results=3)
         if results and 'results' in results and results['results']:
-            # Just return the first result for simplicity
             best = results['results'][0]
-            state["recommendation"] = f"Web search found: {best['title']} - {best['url']}\n{best.get('content', '')}"
+            # Improved formatting
+            state["recommendation"] = (
+                "No similar product was found locally. Here is a web search result that may help you:\n\n"
+                f"**{best['title']}**\n"
+                f"{best['url']}\n\n"
+                f"{best.get('content', '')}"
+            )
         else:
-            state["recommendation"] = "No better product found in local data or web search."
+            state["recommendation"] = (
+                "No similar product was found locally, and no suitable alternatives were found on the web."
+            )
     except Exception as e:
         state["recommendation"] = f"Web search error: {e}"
     return state
@@ -250,6 +267,7 @@ def run_agent():
         "return_reason": "",
         "recommendation": "",
         "messages": [],
+        "interactive": True,
     }
     config = {"configurable": {"thread_id": "test-thread"}}
     result_state = graph.invoke(initial_state, config)
@@ -285,6 +303,7 @@ def validate_image(image_path):
         "return_reason": "",
         "recommendation": "",
         "messages": [],
+        "interactive": True,
     }
     state = image_validation_node(state)
     return state["image_validation"]
@@ -306,6 +325,7 @@ def run_agent_streamlit(image_path, product_title, return_reason, image_validati
             "return_reason": return_reason,
             "recommendation": "",
             "messages": [],
+            "interactive": True,
         }
         config = {"configurable": {"thread_id": "test-thread"}}
         result_state = graph.invoke(initial_state, config)
@@ -319,6 +339,7 @@ def run_agent_streamlit(image_path, product_title, return_reason, image_validati
         "return_reason": return_reason,
         "recommendation": "",
         "messages": [],
+        "interactive": True,
     }
     # Run image validation node if not overridden
     initial_state = image_validation_node(initial_state)
