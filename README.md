@@ -132,8 +132,8 @@ The workflow is visualized in `workflow.png`:
 - Test mode allows you to skip image upload and simulate different validation results.
 - For best results, ensure your virtual environment is activated before running scripts.
 - Both automated and interactive CLI testing are supported via `test_agent.py` and `cli_agent_test.py`.
-- **All scripts and the UI expect data files to be in the `data/` directory.**
-- **If no suitable product is found locally, the agent will automatically perform a web search and return a clearly formatted web result as a fallback.**
+- All scripts and the UI expect data files to be in the `data/` directory.
+- If no suitable product is found locally, the agent will automatically perform a web search and return a clearly formatted web result as a fallback.
 
 ---
 
