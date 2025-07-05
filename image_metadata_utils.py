@@ -1,5 +1,6 @@
 import os
 import piexif
+import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
