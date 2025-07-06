@@ -2,17 +2,10 @@
 streamlit
 pandas
 scikit-learn
-python-dotenv
-
-# LLM integration (choose one or both as needed)
-openai              # For OpenAI GPT models
-langchain           # For LangGraph agent framework
-langchain_ollama    # For Ollama Llama models
-
-# Web search integration
-# (Uncomment if using Tavily web search)
-tavily-python
-ipython
+dotenv
+openai             
+langchain           
+langgraph
 fuzzywuzzy
-python-Levenshtein
+
 
