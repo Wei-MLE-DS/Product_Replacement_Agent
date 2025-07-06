@@ -6,7 +6,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import streamlit as st
 import tempfile
 
-# has a bug, when the image is valid, cannot show the generated recommendation 
 
 st.title("Product Return Agent")
 st.subheader("Upload a product image or skip to test mode. Then enter product details to get a recommendation.")
@@ -14,8 +13,8 @@ st.subheader("Upload a product image or skip to test mode. Then enter product de
 # --- Initialize Session State ---
 if "chat_history" not in st.session_state:
     st.session_state['chat_history'] = []
-if "validation_result" not in st.session_state:
-    st.session_state['validation_result'] = None
+if "image_classification" not in st.session_state:
+    st.session_state['image_classification'] = None
 if "skip_test" not in st.session_state:
     st.session_state['skip_test'] = False
 if "image_path" not in st.session_state:
@@ -27,7 +26,9 @@ if "return_reason" not in st.session_state:
 if "awaiting_product_info" not in st.session_state:
     st.session_state['awaiting_product_info'] = False
 if "test_label" not in st.session_state:
-    st.session_state['test_label'] = 'valid'
+    st.session_state['test_label'] = 'real'
+if "image_processed" not in st.session_state:
+    st.session_state['image_processed'] = False
 
 # --- Chat History Display ---
 chat_container = st.container()
@@ -41,8 +42,9 @@ col1, col2 = st.columns([1, 3])
 with col1:
     if st.button("Skip to Test"):
         st.session_state['skip_test'] = True
-        st.session_state['validation_result'] = None
+        st.session_state['image_classification'] = None
         st.session_state['image_path'] = "dummy.jpg"
+        st.session_state['image_processed'] = False
         st.session_state['chat_history'].append({
             "role": "user",
             "content": "Skipped image upload (test mode enabled)."
@@ -58,74 +60,76 @@ with col2:
                 tmp_file.write(uploaded_file.read())
                 st.session_state['image_path'] = tmp_file.name
             try:
-                from main import validate_image
-                result = validate_image(st.session_state['image_path'])
-                st.session_state['validation_result'] = result
+                from main import run_agent_streamlit
+                from image_agent import ImageAgent
+                image_analyzer = ImageAgent()
+                classification = image_analyzer.classify_image(st.session_state['image_path'])
+                st.session_state['image_classification'] = classification
+                st.session_state['image_processed'] = True
                 st.session_state['skip_test'] = False
                 st.session_state['chat_history'].append({
                     "role": "user",
                     "content": "Uploaded an image."
                 })
-                if result == "valid":
+                if classification == "real":
                     st.session_state['chat_history'].append({
                         "role": "assistant",
                         "content": "Image is valid. Please provide product title and reason for return."
                     })
                     st.session_state['awaiting_product_info'] = True
                 else:
+                     # Get the appropriate error message
+                    from main import IMAGE_CLASSIFICATION_MESSAGES
+                    error_msg = IMAGE_CLASSIFICATION_MESSAGES.get(classification, "Invalid picture. Please re-upload a valid picture.")
                     st.session_state['chat_history'].append({
                         "role": "assistant",
-                        "content": f"Image validation result: {result}. Please re-upload a valid picture or skip to test mode."
+                        "content": error_msg
                     })
                     st.session_state['awaiting_product_info'] = False
                 st.rerun()
             except Exception as e:
-                st.error(f"Image validation error: {e}")
+                st.error(f"Image classification error: {e}")
 
 # --- Step 2: Test Mode: Select Label ---
 if st.session_state['skip_test']:
     st.info("Test mode enabled. Select an image label to simulate.")
     label = st.radio(
         "Select image label:",
-        ("valid", "ai-generated", "photoshopped", "invalid"),
-        index=["valid", "ai-generated", "photoshopped", "invalid"].index(st.session_state['test_label']),
+        ("real", "ai_generated", "photoshopped"),
+        index=["real", "ai_generated", "photoshopped"].index(st.session_state['test_label']),
         key="test_label_radio",
         horizontal=True
     )
     if label != st.session_state['test_label']:
         st.session_state['test_label'] = label
-        st.session_state['validation_result'] = label
-        st.session_state['awaiting_product_info'] = (label == 'valid')
+        st.session_state['image_classification'] = label
+        st.session_state['awaiting_product_info'] = (label == 'real')
         # Add to chat history
         st.session_state['chat_history'].append({
             "role": "user",
             "content": f"Test label selected: {label}"
         })
-        if label == 'valid':
+        if label == 'real':
             st.session_state['chat_history'].append({
                 "role": "assistant",
                 "content": "Image is valid. Please provide product title and reason for return."
             })
         else:
             # Show error message as in backend
-            if label == 'ai-generated':
-                msg = 'Invalid picture: AI-generated. Please re-upload a valid picture.'
-            elif label == 'photoshopped':
-                msg = 'Invalid picture: Photoshopped. Please re-upload a valid picture.'
-            else:
-                msg = 'Invalid picture. Please re-upload a valid picture.'
+            from main import IMAGE_CLASSIFICATION_MESSAGES
+            error_msg = IMAGE_CLASSIFICATION_MESSAGES.get(label, "Invalid picture. Please re-upload a valid picture.")
             st.session_state['chat_history'].append({
                 "role": "assistant",
-                "content": msg
+                "content": error_msg
             })
         st.rerun()
 
-    # If not valid, show error and do not show product info form
-    if st.session_state['test_label'] != 'valid':
-        st.warning("Please re-upload a valid picture or select 'valid' to proceed.")
+    # If not real, show error and do not show product info form
+    if st.session_state['test_label'] != 'real':
+        st.warning("Please re-upload a valid picture or select 'real' to proceed.")
 
 # --- Step 3: Product Info Input (if ready) ---
-if (st.session_state['skip_test'] and st.session_state['test_label'] == 'valid' and st.session_state.get('awaiting_product_info', False)) or (not st.session_state['skip_test'] and st.session_state.get('awaiting_product_info', False)):
+if (st.session_state['skip_test'] and st.session_state['test_label'] == 'real' and st.session_state.get('awaiting_product_info', False)) or (not st.session_state['skip_test'] and st.session_state.get('awaiting_product_info', False)):
     with st.form("product_info_form", clear_on_submit=True):
         product_title = st.text_input("Product Title")
         return_reason = st.text_area("Reason for Return")
@@ -140,12 +144,12 @@ if (st.session_state['skip_test'] and st.session_state['test_label'] == 'valid' 
             # --- Run the agent and append result ---
             try:
                 from main import run_agent_streamlit
-                override = st.session_state['test_label'] if st.session_state['skip_test'] else st.session_state['validation_result']
+                override = st.session_state['test_label'] if st.session_state['skip_test'] else st.session_state['image_classification']
                 result = run_agent_streamlit(
                     st.session_state['image_path'],
                     product_title,
                     return_reason,
-                    image_validation_override=override
+                    image_classification_override=override
                 )
                 st.session_state['chat_history'].append({
                     "role": "assistant",
@@ -161,7 +165,7 @@ if (st.session_state['skip_test'] and st.session_state['test_label'] == 'valid' 
 
 # --- Clear Chat Button ---
 if st.button("Clear Chat"):
-    for key in ["chat_history", "validation_result", "skip_test", "image_path", "product_title", "return_reason", "awaiting_product_info", "test_label"]:
+    for key in ["chat_history", "image_classification", "skip_test", "image_path", "product_title", "return_reason", "awaiting_product_info", "test_label"]:
         if key in st.session_state:
             del st.session_state[key]
     st.rerun()
