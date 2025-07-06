@@ -1,0 +1,36 @@
+flowchart TD
+    A["User uploads image or skips to test"] --> B["Image Agent"]
+    B --> C{"Router: Image to Reason"}
+    C -- "real" --> D["Reason Agent"]
+    C -- "ai_generated/photoshopped" --> E["Show error message, ask for new upload"]
+    E --> A
+    D --> F{"Router: Reason to Recommendation"}
+    F --> G["Recommendation Agent"]
+    
+    G --> I["Find best-matched product titles (fuzzy match)"]
+    I -- "No similar title found" --> J["Return 'No suitable alternatives found'"]
+    I -- "Similar title(s) found" --> K["Filter products by rating >= 4.0"]
+    K -- "No products for best-matched title" --> J
+    K -- "Products found" --> L["Apply reason-based filtering"]
+    L --> M["Compute metadata similarity (Jaccard)"]
+    M -- "Similarity >= threshold" --> N["Format recommendations with title, rating, price, features"]
+    M -- "No match" --> J
+    N --> O["Show recommendations in UI"]
+    J --> O
+    O --> P["End workflow"]
+    
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style B fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style D fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style G fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style C fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style F fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style E fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style P fill:#ffebee,stroke:#c62828,stroke-width:2px
+    style O fill:#e0ffe0,stroke:#333,stroke-width:2px
+    style N fill:#e0f7ff,stroke:#333,stroke-width:2px
+    style J fill:#fffbe0,stroke:#333,stroke-width:2px
+    style I fill:#e0eaff,stroke:#333,stroke-width:2px
+    style K fill:#e0eaff,stroke:#333,stroke-width:2px
+    style L fill:#e0eaff,stroke:#333,stroke-width:2px
+    style M fill:#e0eaff,stroke:#333,stroke-width:2px
