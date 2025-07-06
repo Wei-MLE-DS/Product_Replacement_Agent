@@ -27,8 +27,9 @@ if "awaiting_product_info" not in st.session_state:
     st.session_state['awaiting_product_info'] = False
 if "test_label" not in st.session_state:
     st.session_state['test_label'] = 'real'
-if "image_processed" not in st.session_state:
-    st.session_state['image_processed'] = False
+if "current_file_name" not in st.session_state:
+    st.session_state['current_file_name'] = None
+
 
 # --- Chat History Display ---
 chat_container = st.container()
@@ -44,7 +45,7 @@ with col1:
         st.session_state['skip_test'] = True
         st.session_state['image_classification'] = None
         st.session_state['image_path'] = "dummy.jpg"
-        st.session_state['image_processed'] = False
+        st.session_state['current_file_name'] = None
         st.session_state['chat_history'].append({
             "role": "user",
             "content": "Skipped image upload (test mode enabled)."
@@ -55,40 +56,46 @@ with col1:
 with col2:
     if not st.session_state['skip_test']:
         uploaded_file = st.file_uploader("Upload a product image", type=["jpg", "jpeg", "png"])
-        if uploaded_file:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-                tmp_file.write(uploaded_file.read())
-                st.session_state['image_path'] = tmp_file.name
-            try:
-                from main import run_agent_streamlit
-                from image_agent import ImageAgent
-                image_analyzer = ImageAgent()
-                classification = image_analyzer.classify_image(st.session_state['image_path'])
-                st.session_state['image_classification'] = classification
-                st.session_state['image_processed'] = True
-                st.session_state['skip_test'] = False
-                st.session_state['chat_history'].append({
-                    "role": "user",
-                    "content": "Uploaded an image."
-                })
-                if classification == "real":
+
+         # Check if a new file was uploaded
+        if uploaded_file is not None:
+            current_file_name = uploaded_file.name
+            
+            # Only process if this is a new file
+            if current_file_name != st.session_state.get('current_file_name'):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+                    tmp_file.write(uploaded_file.read())
+                    st.session_state['image_path'] = tmp_file.name
+                
+                try:
+                    from image_agent import ImageAgent
+                    image_analyzer = ImageAgent()
+                    classification = image_analyzer.classify_image(st.session_state['image_path'])
+                    st.session_state['image_classification'] = classification
+                    st.session_state['current_file_name'] = current_file_name 
+                    st.session_state['skip_test'] = False
                     st.session_state['chat_history'].append({
-                        "role": "assistant",
-                        "content": "Image is valid. Please provide product title and reason for return."
+                        "role": "user",
+                        "content": "Uploaded an image."
                     })
-                    st.session_state['awaiting_product_info'] = True
-                else:
-                     # Get the appropriate error message
-                    from main import IMAGE_CLASSIFICATION_MESSAGES
-                    error_msg = IMAGE_CLASSIFICATION_MESSAGES.get(classification, "Invalid picture. Please re-upload a valid picture.")
-                    st.session_state['chat_history'].append({
-                        "role": "assistant",
-                        "content": error_msg
-                    })
-                    st.session_state['awaiting_product_info'] = False
-                st.rerun()
-            except Exception as e:
-                st.error(f"Image classification error: {e}")
+                    if classification == "real":
+                        st.session_state['chat_history'].append({
+                            "role": "assistant",
+                            "content": "Image is valid. Please provide product title and reason for return."
+                        })
+                        st.session_state['awaiting_product_info'] = True
+                    else:
+                        # Get the appropriate error message
+                        from main import IMAGE_CLASSIFICATION_MESSAGES
+                        error_msg = IMAGE_CLASSIFICATION_MESSAGES.get(classification, "Invalid picture. Please re-upload a valid picture.")
+                        st.session_state['chat_history'].append({
+                            "role": "assistant",
+                            "content": error_msg
+                        })
+                        st.session_state['awaiting_product_info'] = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Image classification error: {e}")
 
 # --- Step 2: Test Mode: Select Label ---
 if st.session_state['skip_test']:
