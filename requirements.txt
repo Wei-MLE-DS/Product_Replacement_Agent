@@ -1,0 +1,11 @@
+# Core requirements for the product return agent
+streamlit
+pandas
+scikit-learn
+dotenv
+openai             
+langchain           
+langgraph
+fuzzywuzzy
+
+
