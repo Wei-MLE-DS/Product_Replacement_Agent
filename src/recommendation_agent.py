@@ -41,7 +41,7 @@ class RecommendationAgent:
         # Filter by rating >= 4.0
         self.df = self.df[pd.to_numeric(self.df['average_rating'], errors='coerce') >= 4.0]
 
-    def find_alternatives(self, product_title: str, reason_classification: str, reason_summary: str) -> List[Dict[str, Any]]:
+    def find_alternatives(self, product_title: str, reason_classification: str) -> List[Dict[str, Any]]:
         """
         Find alternative products based on reason classification
         
@@ -60,7 +60,7 @@ class RecommendationAgent:
         filtered_df = self._apply_reason_based_filtering(reason_classification)
         
         # Find similar products
-        similar_products = self._find_similar_products(filtered_df, product_title, reason_summary)
+        similar_products = self._find_similar_products(filtered_df, product_title)
         
         return similar_products
     
@@ -91,7 +91,7 @@ class RecommendationAgent:
         
         return df
     
-    def _find_similar_products(self, df: pd.DataFrame, product_title: str, reason_summary: str) -> List[Dict[str, Any]]:
+    def _find_similar_products(self, df: pd.DataFrame, product_title: str) -> List[Dict[str, Any]]:
         """
         Find similar products using fuzzy matching and similarity scoring
         
@@ -114,7 +114,7 @@ class RecommendationAgent:
             return []
         
         # Compute content similarity
-        user_text = f"{product_title} {reason_summary}"
+        user_text = f"{product_title}"
         matched_df["similarity"] = matched_df.apply(
             lambda row: self._compute_content_similarity(user_text, row), axis=1
         )
@@ -175,15 +175,17 @@ class RecommendationAgent:
             return "No suitable alternatives found."
         
         formatted_blocks = []
-        for product in recommendations:
+        for i, product in enumerate(recommendations, 1):
             features = self._extract_features(product.get('features', ''))
             
             block = (
-                f"**{product.get('title', '')}**\n"
-                f"Rating: {product.get('average_rating', '')} ⭐\n"
-                f"Price: ${product.get('price', '')}\n"
-                f"Features: {features}\n"
-                f"ASIN: {product.get('parent_asin', '')}\n"
+                f"### Recommendation {i}\n\n"
+                f"**{product.get('title', '')}**\n\n"
+                f"**Rating:** {product.get('average_rating', '')} ⭐\n\n"
+                f"**Price:** ${product.get('price', '')}\n\n"
+                f"**Features:** {features}\n\n"
+                f"**ASIN:** {product.get('parent_asin', '')}\n\n"
+                f"---\n\n" 
             )
             formatted_blocks.append(block)
         
@@ -210,10 +212,10 @@ class RecommendationAgent:
     
 
 # --- Standalone Functions for Backward Compatibility ---
-def find_alternatives(product_title: str, reason_classification: str, reason_summary: str) -> List[Dict[str, Any]]:
+def find_alternatives(product_title: str, reason_classification: str) -> List[Dict[str, Any]]:
     """Standalone function to find alternatives"""
     agent = RecommendationAgent()
-    return agent.find_alternatives(product_title, reason_classification, reason_summary)
+    return agent.find_alternatives(product_title, reason_classification)
 
 def format_recommendations(recommendations: List[Dict[str, Any]]) -> str:
     """Standalone function to format recommendations"""

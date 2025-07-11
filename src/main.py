@@ -95,7 +95,6 @@ def recommendation_agent(state: ReturnAgentState) -> ReturnAgentState:
     recommendations = rec_agent.find_alternatives(
         product_title=product_title,
         reason_classification=reason_classification,
-        reason_summary=reason_summary
     )
     
     state["recommendation"] = rec_agent.format_recommendations(recommendations)
