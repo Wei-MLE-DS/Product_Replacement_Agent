@@ -65,7 +65,7 @@ product_return_agent/
    pip install -r requirements.txt
    ```
 4. **Set up API keys**
-   - Create a `.env` file with your OpenAI and Tavily API keys:
+   - Create a `.env` file with your OpenAI API key:
      ```env
      OPENAI_API_KEY=your_openai_key
      ```
@@ -78,7 +78,7 @@ product_return_agent/
 
 ### **Run the Streamlit UI**
 ```bash
-streamlit run src/product_return_agent_ui.py
+streamlit run src/agent_chatbot.py
 ```
 - Upload a product image or use test mode.
 - Enter product title and reason for return.
