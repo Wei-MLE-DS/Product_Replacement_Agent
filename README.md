@@ -80,7 +80,7 @@ streamlit run src/product_return_agent_ui.py
 - You can also search on Amazon and ask the agent to find products if you don't like the producted recommended.
 - **Note:** All data files must be in the `data/` directory.
 
-### **Web Search with MCP (Multi-turn Conversation Protocol)**
+### **Web Search with MCP (Model Context Protocol)**
 
 The web search functionality is powered by an external MCP server that exposes web scraping tools. The Streamlit application communicates with this server to perform searches on Amazon.
 
