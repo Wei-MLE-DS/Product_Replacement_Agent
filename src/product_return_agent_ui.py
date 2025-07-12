@@ -5,8 +5,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import streamlit as st
 import tempfile
+import asyncio
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+from bs4 import BeautifulSoup
+import re
 
-# has a bug, when the image is valid, cannot show the generated recommendation 
 
 st.title("Product Return Agent")
 st.subheader("Upload a product image or skip to test mode. Then enter product details to get a recommendation.")
@@ -28,6 +32,9 @@ if "awaiting_product_info" not in st.session_state:
     st.session_state['awaiting_product_info'] = False
 if "test_label" not in st.session_state:
     st.session_state['test_label'] = 'valid'
+# Ensure that if in test mode and test_label is valid, awaiting_product_info is True
+if st.session_state.get('skip_test', False) and st.session_state.get('test_label', '') == 'valid':
+    st.session_state['awaiting_product_info'] = True
 
 # --- Chat History Display ---
 chat_container = st.container()
@@ -43,11 +50,12 @@ with col1:
         st.session_state['skip_test'] = True
         st.session_state['validation_result'] = None
         st.session_state['image_path'] = "dummy.jpg"
+        st.session_state['test_label'] = 'valid'
+        st.session_state['awaiting_product_info'] = True
         st.session_state['chat_history'].append({
             "role": "user",
             "content": "Skipped image upload (test mode enabled)."
         })
-        st.session_state['awaiting_product_info'] = False
         st.rerun()
 
 with col2:
@@ -126,38 +134,97 @@ if st.session_state['skip_test']:
 
 # --- Step 3: Product Info Input (if ready) ---
 if (st.session_state['skip_test'] and st.session_state['test_label'] == 'valid' and st.session_state.get('awaiting_product_info', False)) or (not st.session_state['skip_test'] and st.session_state.get('awaiting_product_info', False)):
-    with st.form("product_info_form", clear_on_submit=True):
-        product_title = st.text_input("Product Title")
-        return_reason = st.text_area("Reason for Return")
-        submitted = st.form_submit_button("Submit")
-        if submitted:
-            st.session_state['product_title'] = product_title
-            st.session_state['return_reason'] = return_reason
+    st.text_input("Product Title", key="product_title")
+    st.text_area("Reason for Return", key="return_reason")
+    if st.button("Submit"):
+        st.session_state['chat_history'].append({
+            "role": "user",
+            "content": f"Product Title: {st.session_state['product_title']}  \nReason for Return: {st.session_state['return_reason']}"
+        })
+        # --- Run the agent and append result ---
+        try:
+            from main import run_agent_streamlit
+            override = st.session_state['test_label'] if st.session_state['skip_test'] else st.session_state['validation_result']
+            result = run_agent_streamlit(
+                st.session_state['image_path'],
+                st.session_state['product_title'],
+                st.session_state['return_reason'],
+                image_validation_override=override
+            )
             st.session_state['chat_history'].append({
-                "role": "user",
-                "content": f"Product Title: {product_title}  \nReason for Return: {return_reason}"
+                "role": "assistant",
+                "content": f"Recommendation: {result}"
             })
-            # --- Run the agent and append result ---
+        except Exception as e:
+            st.session_state['chat_history'].append({
+                "role": "assistant",
+                "content": f"Error running agent: {e}"
+            })
+        st.session_state['awaiting_product_info'] = False
+        st.rerun()
+
+# --- Amazon Search Button ---
+def extract_amazon_product_urls_from_markdown(content, max_results=3):
+    import re
+    matches = re.findall(r'\[([^\]]+)\]\((/dp/[^)]+)\)', content)
+    urls = []
+    seen = set()
+    for _, url in matches:
+        full_url = f"https://www.amazon.com{url}"
+        if full_url not in seen:
+            urls.append(full_url)
+            seen.add(full_url)
+        if len(urls) >= max_results:
+            break
+    return urls
+
+async def fetch_amazon_product_urls(query, mcp_url="http://localhost:52368/sse"):
+    async with sse_client(url=mcp_url) as streams:
+        async with ClientSession(*streams) as session:
+            await session.initialize()
+            search_url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
+            result = await session.call_tool("visit_page", {"url": search_url})
+            html = ""
+            for item in getattr(result, "content", []):
+                if hasattr(item, "text"):
+                    html = item.text
+                    break
+            return extract_amazon_product_urls_from_markdown(html)
+
+if st.button("Search on Amazon"):
+    product_title = st.session_state.get("product_title", "")
+    if product_title:
+        with st.spinner("Searching Amazon..."):
+            urls = None
             try:
-                from main import run_agent_streamlit
-                override = st.session_state['test_label'] if st.session_state['skip_test'] else st.session_state['validation_result']
-                result = run_agent_streamlit(
-                    st.session_state['image_path'],
-                    product_title,
-                    return_reason,
-                    image_validation_override=override
-                )
-                st.session_state['chat_history'].append({
-                    "role": "assistant",
-                    "content": f"Recommendation: {result}"
-                })
+                try:
+                    urls = asyncio.run(fetch_amazon_product_urls(product_title))
+                except RuntimeError:
+                    import nest_asyncio
+                    nest_asyncio.apply()
+                    loop = asyncio.get_event_loop()
+                    urls = loop.run_until_complete(fetch_amazon_product_urls(product_title))
             except Exception as e:
+                # Any exception will be caught, and 'urls' will remain None.
+                # This will trigger the fallback link display below.
+                pass
+
+            if urls:
+                content = "Top Amazon product URLs:\n" + "\n".join(f"- [Product {i+1}]({url})" for i, url in enumerate(urls))
                 st.session_state['chat_history'].append({
                     "role": "assistant",
-                    "content": f"Error running agent: {e}"
+                    "content": content
                 })
-            st.session_state['awaiting_product_info'] = False
-            st.rerun()
+            else:
+                # This block runs if 'urls' is None (an error occurred) or empty.
+                search_url = f"https://www.amazon.com/s?k={product_title.replace(' ', '+')}"
+                st.session_state['chat_history'].append({
+                    "role": "assistant",
+                    "content": f"Didn't find a product automatically. Please click the link to search: [{search_url}]({search_url})"
+                })
+        st.rerun()
+    else:
+        st.warning("Please enter a product title first and click submit.")
 
 # --- Clear Chat Button ---
 if st.button("Clear Chat"):
@@ -170,3 +237,6 @@ if st.button("Clear Chat"):
 if st.button("End Chat"):
     st.success("Thank you for using the Product Return Agent. Goodbye!")
     st.stop()
+
+#if __name__ == "__main__":
+#    asyncio.run(fetch_amazon_product_urls("dog food"))

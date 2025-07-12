@@ -1,18 +1,17 @@
-# Core requirements for the product return agent
 streamlit
+mcp
+aiohttp
+beautifulsoup4
+nest_asyncio
 pandas
 scikit-learn
-python-dotenv
-
-# LLM integration (choose one or both as needed)
-openai              # For OpenAI GPT models
-langchain           # For LangGraph agent framework
-langchain_ollama    # For Ollama Llama models
-
-# Web search integration
-# (Uncomment if using Tavily web search)
-tavily-python
-ipython
 fuzzywuzzy
 python-Levenshtein
+python-dotenv
+openai
+langchain
+langgraph
+ipython
+typing_extensions
+tavily-python
 

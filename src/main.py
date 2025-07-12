@@ -12,6 +12,9 @@ Workflow:
    - If user wants a cheaper product, search by 'price' and recommend a similar but cheaper product.
    - If cannot find a better product, call a tool to do websearch and return a better product.
 """
+import asyncio
+from mcp import ClientSession
+from mcp.client.sse import sse_client
 
 import os
 import sys
@@ -187,26 +190,10 @@ def csv_search_node(state: ReturnAgentState):
 
 # --- Node 5: Web Search Fallback ---
 def web_search_node(state: ReturnAgentState):
-    # Use product title, reason, and optionally LLM intent to form the query
-    query = f"pet product similar to '{state.get('product_title', '')}' for reason: {state.get('return_reason', '')}"
-    client = TavilyClient()
-    try:
-        results = client.search(query, max_results=3)
-        if results and 'results' in results and results['results']:
-            best = results['results'][0]
-            # Improved formatting
-            state["recommendation"] = (
-                "No similar product was found locally. Here is a web search result that may help you:\n\n"
-                f"**{best['title']}**\n"
-                f"{best['url']}\n\n"
-                f"{best.get('content', '')}"
-            )
-        else:
-            state["recommendation"] = (
-                "No similar product was found locally, and no suitable alternatives were found on the web."
-            )
-    except Exception as e:
-        state["recommendation"] = f"Web search error: {e}"
+    state["recommendation"] = (
+        "No similar product was found in the database. "
+        "You may click the Amazon search button below to do a web search."
+    )
     return state
 
 # --- End Node: Output Recommendation ---

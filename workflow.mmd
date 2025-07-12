@@ -3,18 +3,16 @@ flowchart TD
     B -- "valid" --> C["User enters product title and return reason"]
     B -- "ai-generated/photoshopped/invalid" --> D["Show error, ask for new image"]
     C --> E["Find best-matched product titles (fuzzy match)"]
-    E -- "No similar title found" --> W["Web search for better product"]
+    E -- "No similar title found" --> X["Suggest click the Amazon search button below to do a web search."]
     E -- "Similar title(s) found" --> F["Filter products by rating >= 4.0"]
-    F -- "No products for best-matched title" --> W
+    F -- "No products for best-matched title" --> X
     F -- "Products found" --> G["Compute metadata similarity"]
     G -- "Similarity >= threshold" --> H["Recommend products (show formatted blocks)"]
-    G -- "No match" --> W
-    W --> I["Show web search recommendation or 'No suitable recommendation' message"]
+    G -- "No match" --> X
+    X --> J["Show message in UI; user can click Amazon search button to initiate web search"]
     H --> J["Show recommendations in UI"]
-    I --> J
     D --> A
     style J fill:#e0ffe0,stroke:#333,stroke-width:2px
     style D fill:#ffe0e0,stroke:#333,stroke-width:2px
     style H fill:#e0f7ff,stroke:#333,stroke-width:2px
-    style I fill:#fffbe0,stroke:#333,stroke-width:2px
-    style W fill:#e0eaff,stroke:#333,stroke-width:2px 
+    style X fill:#fffbe0,stroke:#333,stroke-width:2px 
