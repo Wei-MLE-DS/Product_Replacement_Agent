@@ -145,21 +145,6 @@ The workflow is visualized in `workflow.png`:
 
 ![Workflow Diagram](workflow.png)
 
----
-
-## Dependencies
-- Python 3.9+
-- streamlit
-- pandas
-- fuzzywuzzy
-- python-Levenshtein (optional, for speed)
-- openai
-- tavily
-- langgraph
-- langchain-core
-- langchain-ollama (optional)
-- scikit-learn
-- python-dotenv
 
 ---
 
