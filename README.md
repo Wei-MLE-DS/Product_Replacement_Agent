@@ -31,7 +31,7 @@ product_return_agent/
 ├── test/
 │   ├── test_agent.py
 │   ├── cli_agent_test.py
-│   ├── test_web_search.py
+│   ├── view_data.ipynb
 │   └── ...
 ├── requirements.txt
 ├── README.md
@@ -84,7 +84,15 @@ streamlit run src/product_return_agent_ui.py
 
 The web search functionality is powered by an external MCP server that exposes web scraping tools. The Streamlit application communicates with this server to perform searches on Amazon.
 
-**1. Start the MCP Server**
+**1. Install MCP with CLI support**
+
+Before running the MCP server, install the MCP package with CLI support:
+
+```bash
+pip install "mcp[cli]"
+```
+
+**2. Start the MCP Server**
 
 Before running the Streamlit app, you must start the MCP proxy server in a separate terminal. This server uses the `@mzxrai/mcp-webresearch` tool to visit web pages.
 
@@ -99,7 +107,7 @@ INFO:     Uvicorn running on http://127.0.0.1:52368 (Press CTRL+C to quit)
 ```
 Note: the port number can be different on your machine.
 
-**2. Configure the Port in the Application**
+**3. Configure the Port in the Application**
 
 You must ensure the port number in the application code matches the port the MCP server is running on.
 
@@ -111,7 +119,7 @@ You must ensure the port number in the application code matches the port the MCP
         # ... function code ...
     ```
 
-**3. Run the Streamlit App**
+**4. Run the Streamlit App**
 
 With the MCP server running, you can now start the Streamlit app. The "Search on Amazon" button will now correctly call the MCP server to fetch results.
 
@@ -128,13 +136,6 @@ python test/cli_agent_test.py
 ```
 - Prompts you for image path, product title, and reason for return, then runs the agent and prints the recommendation.
 - Useful for manual, human-in-the-loop testing.
-- **Note:** All data files must be in the `data/` directory.
-
-### **Test Web Search Fallback**
-```bash
-python test/test_web_search.py
-```
-- Runs a test of the web search fallback logic with a sample product title and reason that does not exist in the local data, ensuring the web search fallback is triggered and the result is clearly formatted.
 - **Note:** All data files must be in the `data/` directory.
 
 ---
