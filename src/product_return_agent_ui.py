@@ -160,7 +160,7 @@ if (st.session_state['skip_test'] and st.session_state['test_label'] == 'real' a
                 )
                 st.session_state['chat_history'].append({
                     "role": "assistant",
-                    "content": f"Recommendation: {result}"
+                    "content": result
                 })
             except Exception as e:
                 st.session_state['chat_history'].append({
