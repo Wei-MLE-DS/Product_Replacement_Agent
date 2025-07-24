@@ -1,0 +1,13 @@
+{
+  "model_name": "stage1_real_vs_not_real",
+  "num_classes": 2,
+  "class_mapping": {
+    "0": "real",
+    "1": "not_real"
+  },
+  "thresholds": {
+    "real": 0.47,
+    "not_real": 0.33
+  },
+  "description": "Thresholds for binary classification: real vs not real (edited + AI)"
+}
