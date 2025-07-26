@@ -6,7 +6,7 @@ import json
 import joblib
 from PIL import Image
 from typing import Literal, Tuple, Optional
-from image_metadata_utils import (
+from image_detection.image_metadata_utils import (
     extract_metadata_from_pil_image, 
     HybridNet, 
     transform, 
@@ -35,18 +35,18 @@ class ImageAgent:
         self.device = torch.device("cpu")
         
         # Load meta features for both stages
-        self.meta_features1 = self._load_meta_features('train_meta_stage1_train.csv')
-        self.meta_features2 = self._load_meta_features('train_meta_stage2_train.csv')
+        self.meta_features1 = self._load_meta_features('image_detection/train_meta_stage1_train.csv')
+        self.meta_features2 = self._load_meta_features('image_detection/train_meta_stage2_train.csv')
         
         # Load scalers
         self.scaler1, self.scaler2 = load_scalers(
-            f'{model_dir}/metadata_scaler_stage1.pkl',
-            f'{model_dir}/metadata_scaler_stage2.pkl'
+            f'{model_dir}/image_detection/metadata_scaler_stage1.pkl',
+            f'{model_dir}/image_detection/metadata_scaler_stage2.pkl'
         )
         
         # Load models
-        self.model1 = self._load_model('model1_real_vs_not_real.pth', len(self.meta_features1), 2)
-        self.model2 = self._load_model('model2_edited_vs_ai.pth', len(self.meta_features2), 2)
+        self.model1 = self._load_model('image_detection/model1_real_vs_not_real.pth', len(self.meta_features1), 2)
+        self.model2 = self._load_model('image_detection/model2_edited_vs_ai.pth', len(self.meta_features2), 2)
         
         # Load thresholds
         self.threshold_list1, self.threshold_list2 = self._load_thresholds()
@@ -81,9 +81,9 @@ class ImageAgent:
     def _load_thresholds(self) -> Tuple[list, list]:
         """Load optimized thresholds for both stages"""
         try:
-            with open(f'{self.model_dir}/best_thresholds_model1.json', 'r') as f:
+            with open(f'{self.model_dir}/image_detection/best_thresholds_model1.json', 'r') as f:
                 thresholds1 = json.load(f)
-            with open(f'{self.model_dir}/best_thresholds_model2.json', 'r') as f:
+            with open(f'{self.model_dir}/image_detection/best_thresholds_model2.json', 'r') as f:
                 thresholds2 = json.load(f)
             
             threshold_list1 = [thresholds1[f"class_{i}"] for i in range(2)]  # [real, not_real]
@@ -225,9 +225,9 @@ if __name__ == "__main__":
         
         # Test cases - replace with actual image paths
         test_cases = [
-            "human/sample_human.jpg",  # Should be "real"
-            "AI/sample_ai.jpg",        # Should be "ai_generated" 
-            "edited/sample_edited.jpg" # Should be "photoshopped"
+            "human/000295da5dca4af09d5593174e15bb09.jpg",  # Should be "real"
+            "AI/0002f7db7beb4bf5879a0cdb7f17209d.jpg",     # Should be "ai_generated" 
+            "edited/Tp_D_CND_M_N_ani00018_sec00096_00138.tif" # Should be "photoshopped"
         ]
         
         for i, image_path in enumerate(test_cases, 1):

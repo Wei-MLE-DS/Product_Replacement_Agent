@@ -1,6 +1,7 @@
 import os
 import piexif
 import torch
+import torch.nn as nn
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -182,7 +183,6 @@ class HybridImageDataset(Dataset):
         return image, meta, label
     
 
-import torch.nn as nn
 import torchvision.models as models
 
 class HybridNet(nn.Module):
