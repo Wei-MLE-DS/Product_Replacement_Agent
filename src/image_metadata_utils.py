@@ -248,8 +248,15 @@ def extract_metadata_from_pil_image(image, meta_features):
         row.update(extract_noise_features(img_array))
         row.update(extract_edge_density(img_array))
         row.update(extract_qtable(tmp.name, img_format))
-    # Fill missing features with 0
-    return {k: row.get(k, 0) for k in meta_features}
+    # Fill missing features with 0 and handle None values
+    result = {}
+    for k in meta_features:
+        value = row.get(k, 0)
+        if value is None:
+            result[k] = 0
+        else:
+            result[k] = value
+    return result
 
 def load_scalers(stage1_scaler_path='image_detection/metadata_scaler_stage1.pkl', 
                  stage2_scaler_path='image_detection/metadata_scaler_stage2.pkl'):
@@ -273,12 +280,29 @@ def extract_and_scale_metadata(image, meta_features, scaler):
     # Extract raw metadata
     meta_dict = extract_metadata_from_pil_image(image, meta_features)
     
-    # Convert to numpy array
-    meta_array = np.array([meta_dict[f] for f in meta_features]).reshape(1, -1)
+    # Convert to numpy array with proper handling of None values
+    meta_values = []
+    for f in meta_features:
+        value = meta_dict[f]
+        if value is None:
+            meta_values.append(0.0)
+        else:
+            meta_values.append(float(value))
     
-    # Apply scaling
+    meta_array = np.array(meta_values, dtype=np.float64).reshape(1, -1)
+    
+    # Apply scaling with NaN handling
     if scaler is not None:
-        meta_scaled = scaler.transform(meta_array)
+        # Check if scaler has NaN values and handle them
+        if np.any(np.isnan(scaler.mean_)) or np.any(np.isnan(scaler.scale_)):
+            # Create a safe version of the scaler
+            safe_mean = np.where(np.isnan(scaler.mean_), 0.0, scaler.mean_)
+            safe_scale = np.where(np.isnan(scaler.scale_), 1.0, scaler.scale_)
+            
+            # Apply manual scaling
+            meta_scaled = (meta_array - safe_mean) / safe_scale
+        else:
+            meta_scaled = scaler.transform(meta_array)
     else:
         meta_scaled = meta_array
     
