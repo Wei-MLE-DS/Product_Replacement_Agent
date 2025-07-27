@@ -16,7 +16,16 @@ from langgraph.graph.message import add_messages
 from image_agent import ImageAgent
 from reason_agent import ReasonAgent
 from recommendation_agent import RecommendationAgent
+import streamlit as st
 
+@st.cache_resource
+def get_recommendation_agent():
+    csv_path = './data/product_meta_data.csv'
+    mapping_path = './data/parent_asin_mapping_500k.pkl'
+    indexdb_path = './data/titles_hnsw_500k.index'
+    rank_model_path = './model/nli_finetuned20250719_103547'
+    return RecommendationAgent(csv_path, mapping_path, indexdb_path, rank_model_path)
+rec_agent = get_recommendation_agent()
 
 # --- State Definition ---
 class ReturnAgentState(TypedDict):
@@ -90,11 +99,17 @@ def recommendation_agent(state: ReturnAgentState) -> ReturnAgentState:
     if not product_title or not reason_classification:
         state["recommendation"] = "Missing product information or reason classification."
         return state
-    
-    rec_agent = RecommendationAgent()
+    # csv_path = './data/product_meta_data.csv'
+    # mapping_path = './data/parent_asin_mapping_500k.pkl'
+    # indexdb_path = './data/titles_hnsw_500k.index'
+    # rank_model_path = './model/nli_finetuned20250719_103547'
+        
+    # rec_agent = RecommendationAgent(csv_path, mapping_path, indexdb_path, rank_model_path)
+
+    #rec_agent = RecommendationAgent()
     recommendations = rec_agent.find_alternatives(
         product_title=product_title,
-        reason_classification=reason_classification,
+        reason_classification=reason_summary,
     )
     
     state["recommendation"] = rec_agent.format_recommendations(recommendations)
