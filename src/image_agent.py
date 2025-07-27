@@ -193,7 +193,7 @@ class ImageAgent:
                 analysis['decision_reason'] = 'fallback_to_highest_probability'
         
         return analysis
-    
+        
     def classify_image(self, image_path: str) -> Literal["real", "ai_generated", "photoshopped"]:
         """
         Classify an image using the two-stage pipeline
@@ -241,138 +241,12 @@ class ImageAgent:
             print(f"Error classifying image {image_path}: {e}")
             raise
     
-    def classify_image_with_confidence(self, image_path: str) -> Tuple[str, float, dict]:
-        """
-        Classify an image and return confidence scores
-        
-        Args:
-            image_path: Path to the image file
-            
-        Returns:
-            Tuple of (classification, confidence, probabilities_dict)
-        """
-        if not image_path or not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file not found: {image_path}")
-        
-        try:
-            # Load and preprocess image
-            image = Image.open(image_path).convert('RGB')
-            
-            # Stage 1: Real vs Not Real
-            meta1_scaled = extract_and_scale_metadata(image, self.meta_features1, self.scaler1)
-            meta1 = torch.tensor(meta1_scaled, dtype=torch.float32).to(self.device)
-            img_tensor = transform(image).unsqueeze(0).to(self.device)
-            
-            with torch.no_grad():
-                output1 = self.model1(img_tensor, meta1)
-                probs1 = torch.softmax(output1, dim=1).cpu().numpy()[0]
-                stage1_pred = self._predict_with_thresholds(probs1, self.threshold_list1)
-                
-                if stage1_pred == 0:  # Real (human)
-                    return "real", probs1[0], {"stage1": {"real": probs1[0], "not_real": probs1[1]}}
-                else:  # Not Real - need Stage 2
-                    # Stage 2: Edited vs AI
-                    meta2_scaled = extract_and_scale_metadata(image, self.meta_features2, self.scaler2)
-                    meta2 = torch.tensor(meta2_scaled, dtype=torch.float32).to(self.device)
-                    
-                    output2 = self.model2(img_tensor, meta2)
-                    probs2 = torch.softmax(output2, dim=1).cpu().numpy()[0]
-                    stage2_pred = self._predict_with_thresholds(probs2, self.threshold_list2)
-                    
-                    if stage2_pred == 0:  # Edited
-                        return "photoshopped", probs2[0], {
-                            "stage1": {"real": probs1[0], "not_real": probs1[1]},
-                            "stage2": {"edited": probs2[0], "ai": probs2[1]}
-                        }
-                    else:  # AI
-                        return "ai_generated", probs2[1], {
-                            "stage1": {"real": probs1[0], "not_real": probs1[1]},
-                            "stage2": {"edited": probs2[0], "ai": probs2[1]}
-                        }
-                        
-        except Exception as e:
-            print(f"Error classifying image {image_path}: {e}")
-            raise
-    
-    def classify_image_with_analysis(self, image_path: str) -> Tuple[str, float, dict, dict]:
-        """
-        Classify an image and return detailed analysis including threshold decisions
-        
-        Args:
-            image_path: Path to the image file
-            
-        Returns:
-            Tuple of (classification, confidence, probabilities_dict, analysis_dict)
-        """
-        if not image_path or not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file not found: {image_path}")
-        
-        try:
-            # Load and preprocess image
-            image = Image.open(image_path).convert('RGB')
-            
-            # Stage 1: Real vs Not Real
-            meta1_scaled = extract_and_scale_metadata(image, self.meta_features1, self.scaler1)
-            meta1 = torch.tensor(meta1_scaled, dtype=torch.float32).to(self.device)
-            img_tensor = transform(image).unsqueeze(0).to(self.device)
-            
-            analysis = {}
-            
-            with torch.no_grad():
-                output1 = self.model1(img_tensor, meta1)
-                probs1 = torch.softmax(output1, dim=1).cpu().numpy()[0]
-                stage1_analysis = self._analyze_threshold_decision(probs1, self.threshold_list1)
-                stage1_pred = self._predict_with_thresholds(probs1, self.threshold_list1)
-                
-                analysis['stage1'] = {
-                    'analysis': stage1_analysis,
-                    'prediction': stage1_pred,
-                    'class_names': ['real', 'not_real']
-                }
-                
-                if stage1_pred == 0:  # Real (human)
-                    return "real", probs1[0], {"stage1": {"real": probs1[0], "not_real": probs1[1]}}, analysis
-                else:  # Not Real - need Stage 2
-                    # Stage 2: Edited vs AI
-                    meta2_scaled = extract_and_scale_metadata(image, self.meta_features2, self.scaler2)
-                    meta2 = torch.tensor(meta2_scaled, dtype=torch.float32).to(self.device)
-                    
-                    output2 = self.model2(img_tensor, meta2)
-                    probs2 = torch.softmax(output2, dim=1).cpu().numpy()[0]
-                    stage2_analysis = self._analyze_threshold_decision(probs2, self.threshold_list2)
-                    stage2_pred = self._predict_with_thresholds(probs2, self.threshold_list2)
-                    
-                    analysis['stage2'] = {
-                        'analysis': stage2_analysis,
-                        'prediction': stage2_pred,
-                        'class_names': ['edited', 'ai']
-                    }
-                    
-                    if stage2_pred == 0:  # Edited
-                        return "photoshopped", probs2[0], {
-                            "stage1": {"real": probs1[0], "not_real": probs1[1]},
-                            "stage2": {"edited": probs2[0], "ai": probs2[1]}
-                        }, analysis
-                    else:  # AI
-                        return "ai_generated", probs2[1], {
-                            "stage1": {"real": probs1[0], "not_real": probs1[1]},
-                            "stage2": {"edited": probs2[0], "ai": probs2[1]}
-                        }, analysis
-                        
-        except Exception as e:
-            print(f"Error classifying image {image_path}: {e}")
-            raise
-
-# --- Standalone Functions for Backward Compatibility ---
+    # --- Standalone Functions for Backward Compatibility ---
 def classify_image(image_path: str) -> str:
     """Standalone function to classify image"""
     agent = ImageAgent()
     return agent.classify_image(image_path)
 
-def classify_image_with_confidence(image_path: str) -> Tuple[str, float, dict]:
-    """Standalone function to classify image with confidence scores"""
-    agent = ImageAgent()
-    return agent.classify_image_with_confidence(image_path)
 
 # --- Testing ---
 if __name__ == "__main__":
@@ -392,28 +266,12 @@ if __name__ == "__main__":
         
         for i, image_path in enumerate(test_cases, 1):
             print(f"\n--- Test Case {i} ---")
-            print(f"Image Path: {image_path}")
-            
             try:
                 # Test basic classification
                 classification = agent.classify_image(image_path)
+                print(f"Image Path: {image_path}")
                 print(f"Classification: {classification}")
-                
-                # Test classification with detailed analysis
-                classification, confidence, probs, analysis = agent.classify_image_with_analysis(image_path)
-                print(f"Classification: {classification}")
-                print(f"Confidence: {confidence:.3f}")
-                print(f"Probabilities: {probs}")
-                print(f"Threshold Analysis:")
-                for stage, stage_data in analysis.items():
-                    print(f"  {stage.upper()}:")
-                    stage_analysis = stage_data['analysis']
-                    print(f"    Decision Reason: {stage_analysis['decision_reason']}")
-                    print(f"    Max Prob Class: {stage_data['class_names'][stage_analysis['max_prob_class']]}")
-                    print(f"    Max Probability: {stage_analysis['max_prob']:.3f}")
-                    print(f"    Probability Difference: {stage_analysis['prob_diff']:.3f}")
-                    print(f"    Thresholds Exceeded: {stage_analysis['threshold_exceeded']}")
-                
+
             except FileNotFoundError:
                 print(f"File not found: {image_path}")
             except Exception as e:
