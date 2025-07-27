@@ -35,18 +35,18 @@ class ImageAgent:
         self.device = torch.device("cpu")
         
         # Load meta features for both stages
-        self.meta_features1 = self._load_meta_features('train_meta_stage1_train.csv')
-        self.meta_features2 = self._load_meta_features('train_meta_stage2_train.csv')
+        self.meta_features1 = self._load_meta_features('data/train_meta_stage1_train.csv')
+        self.meta_features2 = self._load_meta_features('data/train_meta_stage2_train.csv')
         
         # Load scalers
         self.scaler1, self.scaler2 = load_scalers(
-            f'{model_dir}/metadata_scaler_stage1.pkl',
-            f'{model_dir}/metadata_scaler_stage2.pkl'
+            f'{model_dir}/src/metadata_scaler_stage1.pkl',
+            f'{model_dir}/src/metadata_scaler_stage2.pkl'
         )
         
         # Load models (using fixed versions)
-        self.model1 = self._load_model('model1_real_vs_not_real_fixed.pth', len(self.meta_features1), 2)
-        self.model2 = self._load_model('model2_edited_vs_ai_fixed.pth', len(self.meta_features2), 2)
+        self.model1 = self._load_model('src/model1_real_vs_not_real_fixed.pth', len(self.meta_features1), 2)
+        self.model2 = self._load_model('src/model2_edited_vs_ai_fixed.pth', len(self.meta_features2), 2)
         
         # Load thresholds
         self.threshold_list1, self.threshold_list2 = self._load_thresholds()
@@ -81,9 +81,9 @@ class ImageAgent:
     def _load_thresholds(self) -> Tuple[list, list]:
         """Load optimized thresholds for both stages"""
         try:
-            with open(f'{self.model_dir}/best_thresholds_model1.json', 'r') as f:
+            with open(f'{self.model_dir}/src/best_thresholds_model1.json', 'r') as f:
                 thresholds1 = json.load(f)
-            with open(f'{self.model_dir}/best_thresholds_model2.json', 'r') as f:
+            with open(f'{self.model_dir}/src/best_thresholds_model2.json', 'r') as f:
                 thresholds2 = json.load(f)
             
             threshold_list1 = [thresholds1[f"class_{i}"] for i in range(2)]  # [real, not_real]
