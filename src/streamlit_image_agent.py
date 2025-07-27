@@ -280,7 +280,7 @@ def main():
                                 </div>
                                 """, unsafe_allow_html=True)
                             else:
-                                st.warning("Please provide your reasoning before submitting.")
+                                st.warning("Can you tell me the reason to return?")
                     
                     elif classification == "photoshopped":
                         st.warning("✂️ **Edited Image Detected**")
